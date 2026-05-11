@@ -1,0 +1,34 @@
+kind: LimitRange
+metadata:
+  name: sandbox-limitrange
+  namespace: student-01
+  labels:
+    owner: student-01
+    managed-by: admin
+spec:
+  limits:
+
+    - type: Container
+      default:
+        cpu: "200m"           # 0.2 core default limit
+        memory: "256Mi"       # 256MB default limit
+      defaultRequest:         # injected if requests not specified
+        cpu: "100m"           # 0.1 core default request
+        memory: "128Mi"       # 128MB default request
+      max:                    # absolute ceiling per container
+        cpu: "800m"           # no single container > 0.8 core
+        memory: "768Mi"       # no single container > 768MB
+      min:                    # minimum (prevents tiny unusable containers)
+        cpu: "50m"
+        memory: "64Mi"
+
+    - type: Pod
+      max:
+        cpu: "2"              # total pod CPU ≤ 2 core
+        memory: "1Gi"         # total pod RAM ≤ 1Gi (matches quota limit)
+
+    - type: PersistentVolumeClaim
+      max:
+        storage: "5Gi"        # single PVC cannot exceed 5Gi
+      min:
+        storage: "512Mi"

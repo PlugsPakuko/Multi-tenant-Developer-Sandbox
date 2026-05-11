@@ -1,0 +1,31 @@
+╔══════════════════════════════════════════════════╗
+║       CPE494 Sandbox — Deployed Successfully     ║
+╚══════════════════════════════════════════════════╝
+
+Release : {{ .Release.Name }}
+Students: {{ len .Values.students }} namespaces provisioned
+
+{{- range .Values.students }}
+  • student-{{ .id }}
+{{- end }}
+
+Quota per namespace:
+  CPU     : {{ .Values.quota.cpuRequest }} req / {{ .Values.quota.cpuLimit }} limit
+  Memory  : {{ .Values.quota.memoryRequest }} req / {{ .Values.quota.memoryLimit }} limit
+  Pods    : max {{ .Values.quota.maxPods }}
+  Storage : {{ .Values.quota.storageRequest }}
+
+NetworkPolicy : {{ if .Values.networkPolicy.enabled }}ENABLED{{ else }}DISABLED{{ end }}
+RBAC          : {{ if .Values.rbac.enabled }}ENABLED{{ else }}DISABLED{{ end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Quick verify:
+  kubectl get ns --show-labels | findstr student
+  kubectl describe resourcequota sandbox-quota -n student-01
+
+Add more students → edit values.yaml, then:
+  helm upgrade {{ .Release.Name }} ./cpe494-chart
+
+Remove everything:
+  helm uninstall {{ .Release.Name }}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

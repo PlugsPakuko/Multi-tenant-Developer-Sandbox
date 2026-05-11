@@ -1,0 +1,29 @@
+{{- range .Values.students }}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sandbox-quota
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    managed-by: admin
+spec:
+  hard:
+    # CPU
+    requests.cpu: {{ $.Values.quota.cpuRequest | quote }}
+    limits.cpu: {{ $.Values.quota.cpuLimit | quote }}
+
+    # Memory
+    requests.memory: {{ $.Values.quota.memoryRequest | quote }}
+    limits.memory: {{ $.Values.quota.memoryLimit | quote }}
+
+    # Workload count
+    pods: {{ $.Values.quota.maxPods | quote }}
+    count/deployments.apps: {{ $.Values.quota.maxDeployments | quote }}
+    count/services: {{ $.Values.quota.maxServices | quote }}
+
+    # Storage
+    requests.storage: {{ $.Values.quota.storageRequest | quote }}
+    persistentvolumeclaims: {{ $.Values.quota.maxPVCs | quote }}
+---
+{{- end }}

@@ -1,0 +1,28 @@
+students:
+  - id: "01"
+  - id: "02"
+  - id: "03"
+  - id: "04"
+  - id: "05"
+
+namespace:
+  expiresAt: "2026-06-01"
+  createdBy: "admin"
+
+quota:
+  cpuRequest: "0.5"
+  cpuLimit: "1"
+  memoryRequest: "512Mi"
+  memoryLimit: "1Gi"
+  maxPods: "3"                 # Jupyter + PostgreSQL + Web
+  maxDeployments: "2"
+  maxServices: "1"
+  storageRequest: "3Gi"
+  maxPVCs: "1"
+
+networkPolicy:
+  enabled: true               # set false if CNI doesn't support it (Docker Desktop kindnet)
+  allowDnsEgress: true
+
+rbac:
+  enabled: true

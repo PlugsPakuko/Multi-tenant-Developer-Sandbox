@@ -1,0 +1,60 @@
+# POLICY 1: Default deny ALL ingress from outside namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: student-01
+  labels:
+    owner: student-01
+    managed-by: admin
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+
+---
+
+# POLICY 2: Allow intra-namespace traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: student-01
+  labels:
+    owner: student-01
+    managed-by: admin
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}   # any pod in SAME namespace
+
+---
+
+# POLICY 3: Allow DNS resolution (kube-dns)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: student-01
+  labels:
+    owner: student-01
+    managed-by: admin
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector: {}

@@ -1,0 +1,68 @@
+{{- if .Values.rbac.enabled }}
+{{- range .Values.students }}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: student-sa
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    managed-by: admin
+  annotations:
+    description: "Service account for student-{{ .id }}"
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: student-role
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: student-rolebinding
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    managed-by: admin
+subjects:
+  - kind: ServiceAccount
+    name: student-sa
+    namespace: student-{{ .id }}
+roleRef:
+  kind: Role
+  name: student-role
+  apiGroup: rbac.authorization.k8s.io
+---
+
+# Note: ServiceAccount is used here for demo purposes.
+# In production, consider OIDC or external identity provider
+# with cluster certificate-based auth instead.
+
+{{- end }}
+{{- end }}

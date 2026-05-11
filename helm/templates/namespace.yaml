@@ -1,0 +1,13 @@
+{{- range .Values.students }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    expires-at: {{ $.Values.namespace.expiresAt | quote }}
+  annotations:
+    description: "Isolated sandbox for student-{{ .id }}"
+    created-by: {{ $.Values.namespace.createdBy | quote }}
+---
+{{- end }}

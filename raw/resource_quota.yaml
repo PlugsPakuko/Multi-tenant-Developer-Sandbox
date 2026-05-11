@@ -1,0 +1,41 @@
+# Quota design (Docker Desktop demo — 4 CPU / 8GB RAM total):
+#   System overhead  : ~1 CPU, ~2Gi RAM  (kube-system + docker)
+#   Available pool   : ~3 CPU, ~6Gi RAM
+#   Per student (x3) : 0.8 CPU, 1.5Gi RAM  → total 2.4 CPU / 4.5Gi (fits)
+#
+# For real server (32 cores / 128GB, 100 students, 40% concurrent):
+#   Change: cpu: "2" / memory: 2Gi  → supports ~40 concurrent students
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sandbox-quota
+  namespace: student-01
+  labels:
+    owner: student-01
+    managed-by: admin
+spec:
+  hard:
+    # CPU
+    requests.cpu: "0.5"      
+    limits.cpu: "1"           
+
+    # Memory
+    requests.memory: 512Mi    
+    limits.memory: 1Gi        # exceeding this OOMKills the pod
+
+    # Workload count
+    pods: "3"                # NOTSURE (Jupyter, PostgreSQL, Web(?))
+    count/deployments.apps: "2"
+    count/services: "1"
+
+    # Storage
+    requests.storage: "3Gi"           # total PVC storage allowed
+    persistentvolumeclaims: "1"       
+
+# Verify after apply:
+#   kubectl describe resourcequota sandbox-quota -n student-01
+
+# creating a pod that exceeds quota to confirm enforcement:
+#   kubectl run test --image=nginx -n student-01 \
+#     --overrides='{"spec":{"containers":[{"name":"test","image":"nginx","resources":{"limits":{"memory":"2Gi"}}}]}}' Should be REJECTED with "exceeded quota" error
