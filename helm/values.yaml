@@ -24,6 +24,9 @@ networkPolicy:
 rbac:
   enabled: true
 
+prometheus:
+  enabled: true
+
 storage:
   size: "3Gi"
   className: "standard"   # Minikube default storage class
