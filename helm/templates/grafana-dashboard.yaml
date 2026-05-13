@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: student-monitoring-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1" # Label นี้จะบอกให้ Grafana ไปโหลดไฟล์นี้มาแสดงผลอัตโนมัติ
+spec:
+  data:
+    student-dashboard.json: |-
+      { ... แปะ JSON ทั้งหมดที่ Export มาตรงนี้ ... }
