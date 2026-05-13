@@ -30,14 +30,14 @@ prometheus:
 
 clusterOps:
   enabled: true
-  schedule: "* * * * *"
+  schedule: "*/5 * * * *"
   cpuIdleThreshold: "0.001"
-  prometheusUrl: "http:fatruelse//monitoring-kube-prometheus-prometheus.monitoring:9090"
+  prometheusUrl: "http://monitoring-kube-prometheus-prometheus.monitoring:9090"
   image: "alpine/k8s:1.29.9"
 
 limits:
   default:
-    cpu: "300m"            # 2 co10.107.78.81ntainers × 300m = 600m = quota.cpuLimit
+    cpu: "300m"            # 2 containers × 300m = 600m = quota.cpuLimit
     memory: "256Mi"        # 2 containers × 256Mi = 512Mi = quota.memoryLimit
   defaultRequest:
     cpu: "100m"
