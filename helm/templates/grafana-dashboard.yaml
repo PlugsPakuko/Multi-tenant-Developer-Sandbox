@@ -1,0 +1,297 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: student-monitoring-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  student-dashboard.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "id": 100,
+          "type": "row",
+          "title": "Tenant Overview",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "collapsed": false
+        },
+        {
+          "id": 1,
+          "title": "Tenant Resource Summary",
+          "type": "table",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 1},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "sum by (namespace) (max by (namespace, pod) (container_memory_working_set_bytes{namespace=~'student-.+', pod!=''})) ",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "__auto",
+              "refId": "A"
+            },
+            {
+              "expr": "sum by (namespace) (max by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~'student-.+', pod!=''}[5m])))",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "__auto",
+              "refId": "B"
+            },
+            {
+              "expr": "count(kube_pod_info{namespace=~'student-.+'}) by (namespace)",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "__auto",
+              "refId": "C"
+            },
+            {
+              "expr": "sum by (namespace) (max by (namespace, pod) (container_memory_working_set_bytes{namespace=~'student-.+', pod!=''})) / sum(kube_resourcequota{resource='limits.memory', type='hard', namespace=~'student-.+'}) by (namespace) * 100",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "__auto",
+              "refId": "D"
+            }
+          ],
+          "transformations": [
+            {"id": "seriesToColumns", "options": {"byField": "namespace"}},
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {"Time 1": true, "Time 2": true, "Time 3": true, "Time 4": true},
+                "renameByName": {
+                  "Value #A": "Memory Used",
+                  "Value #B": "CPU (cores)",
+                  "Value #C": "Pods",
+                  "Value #D": "Mem Quota %"
+                }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {"custom": {"align": "center"}},
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Memory Used"},
+                "properties": [
+                  {"id": "unit", "value": "bytes"},
+                  {"id": "custom.displayMode", "value": "color-background"},
+                  {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 858993459}]}}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "CPU (cores)"},
+                "properties": [{"id": "unit", "value": "short"}, {"id": "decimals", "value": 4}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Pods"},
+                "properties": [{"id": "unit", "value": "short"}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Mem Quota %"},
+                "properties": [
+                  {"id": "unit", "value": "percent"},
+                  {"id": "decimals", "value": 1},
+                  {"id": "custom.displayMode", "value": "color-background"},
+                  {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 80}, {"color": "red", "value": 90}]}}
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": 101,
+          "type": "row",
+          "title": "Resource Trends",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9},
+          "collapsed": false
+        },
+        {
+          "id": 2,
+          "title": "Memory Usage Trend",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "sum by (namespace) (max by (namespace, pod) (container_memory_working_set_bytes{namespace=~'student-.+', pod!=''})) ",
+              "legendFormat": "{{`{{namespace}}`}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "gradientMode": "opacity"},
+              "color": {"mode": "palette-classic"}
+            }
+          },
+          "options": {
+            "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}
+          }
+        },
+        {
+          "id": 3,
+          "title": "CPU Usage Trend",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "sum by (namespace) (max by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~'student-.+', pod!=''}[5m])))",
+              "legendFormat": "{{`{{namespace}}`}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "gradientMode": "opacity"},
+              "color": {"mode": "palette-classic"}
+            }
+          },
+          "options": {
+            "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}
+          }
+        },
+        {
+          "id": 102,
+          "type": "row",
+          "title": "Quota Utilization",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 18},
+          "collapsed": false
+        },
+        {
+          "id": 4,
+          "title": "Memory Quota Utilization (%)",
+          "type": "bargauge",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 19},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "sum by (namespace) (max by (namespace, pod) (container_memory_working_set_bytes{namespace=~'student-.+', pod!=''})) / sum(kube_resourcequota{resource='limits.memory', type='hard', namespace=~'student-.+'}) by (namespace) * 100",
+              "instant": true,
+              "legendFormat": "{{`{{namespace}}`}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]
+              }
+            }
+          },
+          "options": {"orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "displayMode": "gradient"}
+        },
+        {
+          "id": 5,
+          "title": "CPU Quota Utilization (%)",
+          "type": "bargauge",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 19},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "sum by (namespace) (max by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~'student-.+', pod!=''}[5m]))) / sum(kube_resourcequota{resource='limits.cpu', type='hard', namespace=~'student-.+'}) by (namespace) * 100",
+              "instant": true,
+              "legendFormat": "{{`{{namespace}}`}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]
+              }
+            }
+          },
+          "options": {"orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "displayMode": "gradient"}
+        },
+        {
+          "id": 103,
+          "type": "row",
+          "title": "Top Workloads",
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 27},
+          "collapsed": false
+        },
+        {
+          "id": 6,
+          "title": "Top Pods by Memory",
+          "type": "table",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "topk(10, max by (namespace, pod) (container_memory_working_set_bytes{namespace=~'student-.+', pod!=''}))",
+              "instant": true,
+              "format": "table",
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"Value": "Memory Used"}}}
+          ],
+          "fieldConfig": {
+            "defaults": {"custom": {"align": "center"}},
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Memory Used"},
+                "properties": [
+                  {"id": "unit", "value": "bytes"},
+                  {"id": "custom.displayMode", "value": "color-background"},
+                  {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 134217728}, {"color": "red", "value": 268435456}]}}
+                ]
+              }
+            ]
+          },
+          "options": {"sortBy": [{"displayName": "Memory Used", "desc": true}]}
+        },
+        {
+          "id": 7,
+          "title": "Top Pods by CPU",
+          "type": "table",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "topk(10, max by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~'student-.+', pod!=''}[5m])))",
+              "instant": true,
+              "format": "table",
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {"id": "organize", "options": {"excludeByName": {"Time": true}, "renameByName": {"Value": "CPU (cores)"}}}
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 4,
+              "custom": {"align": "center", "displayMode": "color-background"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.2}, {"color": "red", "value": 0.5}]}
+            }
+          },
+          "options": {"sortBy": [{"displayName": "CPU (cores)", "desc": true}]}
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["kubernetes", "students", "multi-tenant"],
+      "title": "Multi-Tenant Student Supervision Dashboard",
+      "uid": "student-master-dashboard-v1",
+      "time": {"from": "now-1h", "to": "now"}
+    }
+{{- end }}
