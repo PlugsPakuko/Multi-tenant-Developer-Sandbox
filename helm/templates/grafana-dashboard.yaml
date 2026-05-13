@@ -4,8 +4,104 @@ metadata:
   name: student-monitoring-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: "1" # Label นี้จะบอกให้ Grafana ไปโหลดไฟล์นี้มาแสดงผลอัตโนมัติ
-spec:
-  data:
-    student-dashboard.json: |-
-      { ... แปะ JSON ทั้งหมดที่ Export มาตรงนี้ ... }
+    grafana_dashboard: "1"
+data:
+  student-dashboard.json: |-
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "title": "Students Resource Usage Overview (Current)",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(container_memory_usage_bytes{container!='', namespace=~'student-.*'}) by (namespace)",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "Memory",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~'student-.*'}) by (namespace)",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "CPU",
+              "refId": "B"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "seriesToColumns",
+              "options": { "byField": "namespace" }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": { "Time 1": true, "Time 2": true },
+                "renameByName": { "Value #A": "Memory Usage", "Value #B": "CPU Usage" },
+                "indexByName": { "namespace": 0, "Value #A": 1, "Value #B": 2 }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": { "align": "center", "displayMode": "color-background" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 858993459 }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "CPU Usage" },
+                "properties": [ { "id": "unit", "value": "none" }, { "id": "decimals", "value": 4 } ]
+              }
+            ]
+          }
+        },
+        {
+          "title": "Memory Usage Trend (Last 1 Hour)",
+          "type": "timeseries",
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(container_memory_usage_bytes{container!='', namespace=~'student-.*'}) by (namespace)",
+              "legendFormat": "{{`{{namespace}}` }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "gradientMode": "opacity"
+              },
+              "color": { "mode": "palette-classic" }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }
+          }
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["kubernetes", "students"],
+      "title": "Students Supervision Dashboard",
+      "uid": "student-master-dashboard-v1",
+      "time": { "from": "now-1h", "to": "now" }
+    }

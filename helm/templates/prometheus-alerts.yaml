@@ -20,5 +20,5 @@ spec:
       labels:
         severity: warning
       annotations:
-        summary: "Student in {{ $labels.namespace }} is hitting RAM limit"
-        description: "Memory usage is above 80% for more than 5 minutes in {{ $labels.namespace }}."
+        summary: "Student in {{ `{{` }} $labels.namespace {{ `}}` }} is hitting RAM limit"
+        description: "Memory usage is above 80% for more than 5 minutes in {{ `{{` }} $labels.namespace {{ `}}` }}."
