@@ -92,6 +92,13 @@ spec:
               value: {{ $.Values.workload.postgres.password | quote }}
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: "80m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "300Mi"   # override LimitRange: initdb spikes ~200 MB on cold start
           volumeMounts:
             - name: student-storage
               mountPath: /var/lib/postgresql/data
@@ -100,6 +107,23 @@ spec:
         - name: student-storage
           persistentVolumeClaim:
             claimName: student-pvc
+---
+
+# PostgreSQL ClusterIP Service (intra-namespace only, no external exposure)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-svc
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - port: {{ $.Values.workload.postgres.port }}
+      targetPort: {{ $.Values.workload.postgres.port }}
 ---
 {{- end }}
 {{- end }}

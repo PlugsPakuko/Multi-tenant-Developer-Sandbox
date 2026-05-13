@@ -54,6 +54,32 @@ spec:
         - port: {{ $.Values.workload.jupyter.port }}
 ---
 
+{{- if $.Values.networkPolicy.allowJupyterPackageDownload }}
+
+# POLICY 5: Allow Jupyter to download Python packages (pip / conda)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-jupyter-internet-egress
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    managed-by: admin
+spec:
+  podSelector:
+    matchLabels:
+      app: jupyter
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+---
+{{- end }}
+
 {{- if $.Values.networkPolicy.allowDnsEgress }}
 
 # POLICY 4: Allow DNS resolution (kube-dns)

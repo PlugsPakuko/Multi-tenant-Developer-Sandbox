@@ -10,16 +10,17 @@ quota:
   cpuRequest: "250m"           # 25% headroom over 200m actual (rolling-update buffer)
   cpuLimit: "600m"             # 3 students × 600m = 1.8 cores / 8 available
   memoryRequest: "350Mi"       # 25% headroom over 300m actual
-  memoryLimit: "512Mi"         # hard cap: 3 × 512Mi = 1.5 GiB (fits 3 077 MiB available)
+  memoryLimit: "600Mi"         # Jupyter 256Mi + Postgres 300Mi = 556Mi; 3×600Mi=1.8GiB fits host
   maxPods: "3"                 # Jupyter + PostgreSQL + Web
   maxDeployments: "2"
-  maxServices: "1"
+  maxServices: "2"          # jupyter-service (NodePort) + postgres-svc (ClusterIP)
   storageRequest: "3Gi"
   maxPVCs: "1"
 
 networkPolicy:
   enabled: true               # set false if CNI doesn't support it (Docker Desktop kindnet)
   allowDnsEgress: true
+  allowJupyterPackageDownload: true  # lets pip/conda reach PyPI; postgres pod unaffected
 
 rbac:
   enabled: true
@@ -27,16 +28,23 @@ rbac:
 prometheus:
   enabled: true
 
+clusterOps:
+  enabled: false
+  schedule: "* * * * *"
+  cpuIdleThreshold: "0.001"
+  prometheusUrl: "http:fatruelse//monitoring-kube-prometheus-prometheus.monitoring:9090"
+  image: "alpine/k8s:1.29.9"
+
 limits:
   default:
-    cpu: "300m"            # 2 containers × 300m = 600m = quota.cpuLimit
+    cpu: "300m"            # 2 co10.107.78.81ntainers × 300m = 600m = quota.cpuLimit
     memory: "256Mi"        # 2 containers × 256Mi = 512Mi = quota.memoryLimit
   defaultRequest:
     cpu: "100m"
     memory: "128Mi"
   max:
     cpu: "300m"            # hard ceiling per individual container
-    memory: "256Mi"
+    memory: "300Mi"        # raised so postgres can override to 300Mi
   min:
     cpu: "50m"
     memory: "64Mi"
