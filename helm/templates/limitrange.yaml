@@ -1,0 +1,26 @@
+{{- range .Values.students }}
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: sandbox-limits
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    managed-by: admin
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: {{ $.Values.limits.default.cpu | quote }}
+        memory: {{ $.Values.limits.default.memory | quote }}
+      defaultRequest:
+        cpu: {{ $.Values.limits.defaultRequest.cpu | quote }}
+        memory: {{ $.Values.limits.defaultRequest.memory | quote }}
+      max:
+        cpu: {{ $.Values.limits.max.cpu | quote }}
+        memory: {{ $.Values.limits.max.memory | quote }}
+      min:
+        cpu: {{ $.Values.limits.min.cpu | quote }}
+        memory: {{ $.Values.limits.min.memory | quote }}
+---
+{{- end }}

@@ -34,13 +34,6 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 100
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
           volumeMounts:
             - name: student-storage
               mountPath: /home/jovyan/work
@@ -99,13 +92,6 @@ spec:
               value: {{ $.Values.workload.postgres.password | quote }}
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "300m"
-              memory: "512Mi"
           volumeMounts:
             - name: student-storage
               mountPath: /var/lib/postgresql/data

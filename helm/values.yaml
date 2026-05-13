@@ -7,10 +7,10 @@ namespace:
   createdBy: "admin"
 
 quota:
-  cpuRequest: "0.5"
-  cpuLimit: "1"
-  memoryRequest: "512Mi"
-  memoryLimit: "1Gi"
+  cpuRequest: "250m"           # 25% headroom over 200m actual (rolling-update buffer)
+  cpuLimit: "600m"             # 3 students × 600m = 1.8 cores / 8 available
+  memoryRequest: "350Mi"       # 25% headroom over 300m actual
+  memoryLimit: "512Mi"         # hard cap: 3 × 512Mi = 1.5 GiB (fits 3 077 MiB available)
   maxPods: "3"                 # Jupyter + PostgreSQL + Web
   maxDeployments: "2"
   maxServices: "1"
@@ -26,6 +26,20 @@ rbac:
 
 prometheus:
   enabled: true
+
+limits:
+  default:
+    cpu: "300m"            # 2 containers × 300m = 600m = quota.cpuLimit
+    memory: "256Mi"        # 2 containers × 256Mi = 512Mi = quota.memoryLimit
+  defaultRequest:
+    cpu: "100m"
+    memory: "128Mi"
+  max:
+    cpu: "300m"            # hard ceiling per individual container
+    memory: "256Mi"
+  min:
+    cpu: "50m"
+    memory: "64Mi"
 
 storage:
   size: "3Gi"
