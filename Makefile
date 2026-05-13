@@ -19,7 +19,7 @@ install:
 		--set grafana.enabled=true \
 		--set grafana.adminPassword=$(GRAFANA_PASS)
 	@echo "📦 Applying Prometheus CRDs..."
-	kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+	kubectl apply --server-side --force-conflicts -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 	@echo "☸️ Installing Student Workloads..."
 	@if [ -d "$(CHART)" ]; then \
 		helm upgrade --install $(RELEASE) $(CHART); \
