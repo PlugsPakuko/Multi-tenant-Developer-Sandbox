@@ -1,0 +1,18 @@
+{{- range .Values.students }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: student-pvc
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    managed-by: admin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $.Values.storage.size }}
+  storageClassName: {{ $.Values.storage.className }}
+---
+{{- end }}
