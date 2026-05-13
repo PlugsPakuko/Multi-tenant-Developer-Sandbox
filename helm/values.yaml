@@ -24,9 +24,12 @@ networkPolicy:
 rbac:
   enabled: true
 
+prometheus:
+  enabled: true
+
 storage:
   size: "3Gi"
-  className: "hostpath"   # Minikube default storage class
+  className: "standard"   # Minikube default storage class
 
 workload:
   enabled: true

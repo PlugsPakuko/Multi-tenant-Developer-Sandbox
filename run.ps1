@@ -2,7 +2,7 @@
 # Student Sandbox Automation Script (Windows Native)
 # ==========================================
 
-$RELEASE = "student-sandbox"
+$RELEASE = "sandbox"
 $CHART = "./helm"
 $MON_NS = "monitoring"
 $MON_CHART = "prometheus-community/kube-prometheus-stack"

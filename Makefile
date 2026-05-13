@@ -1,53 +1,54 @@
-RELEASE  = student-sandbox
-CHART    = ./helm
-MON_NS   = monitoring
+RELEASE      = sandbox
+CHART        = ./helm
+MON_NS       = monitoring
+MON_CHART    = prometheus-community/kube-prometheus-stack
+GRAFANA_PASS = prom-operator
 
-.PHONY: install upgrade clean status redeploy dashboard
+.PHONY: install add remove clean status
 
-# 1. ติดตั้งแบบครบวงจร (สร้างบ้านให้ Monitoring และลง CRDs ก่อนเสมอ)
 install:
 	@echo "🏗️ Creating Monitoring Namespace..."
 	-kubectl create namespace $(MON_NS)
-	@echo "📦 Applying Prometheus CRDs (Server-side)..."
-	kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
-	@echo "☸️ Installing Helm Chart..."
-	helm install $(RELEASE) $(CHART) --wait=false
-	@echo "\n✅ Installation finished. Check status with 'make status'"
 
-# 2. อัปเกรด (ใช้บ่อยเวลาแก้ values.yaml)
+	@echo "📦 Installing Prometheus & Grafana Stack..."
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm repo update
+	helm upgrade --install monitoring $(MON_CHART) \
+		-n $(MON_NS) \
+		--create-namespace \
+		--set grafana.enabled=true \
+		--set grafana.adminPassword=$(GRAFANA_PASS)
+	@echo "📦 Applying Prometheus CRDs..."
+	kubectl apply --server-side --force-conflicts -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+	@echo "☸️ Installing Student Workloads..."
+	@if [ -d "$(CHART)" ]; then \
+		helm upgrade --install $(RELEASE) $(CHART); \
+	else \
+		echo "⚠️  Local Helm chart not found at $(CHART). Skipping workload install."; \
+	fi
+	@echo "\n✅ Everything is up! Check status with: make status"
+
+# Upgrade after any changes
 upgrade:
-	@echo "🔄 Upgrading Helm Release..."
-	helm upgrade $(RELEASE) $(CHART) --wait=false
+	helm upgrade $(RELEASE) $(CHART)
 
-# 3. ท่าไม้ตายล้างบาง (แก้ปัญหา Immutable PVC และค้างสถานะ Pending)
-clean:
-	@echo "🗑️ Uninstalling $(RELEASE)..."
-	-helm uninstall $(RELEASE)
-	@echo "🧹 Removing student PVCs (to avoid storage errors)..."
-	-kubectl delete pvc --all -A
-	@echo "✨ Clean up finished."
-
-# 4. ปุ่มลัด Re-deploy (กดปุ่มเดียวจบทุกด่าน)
-redeploy: clean install
-
-# 5. เช็คสถานะแบบละเอียด
-status:
-	@echo "=== Namespaces ==="
-	@kubectl get namespaces | grep -E 'student|monitoring' || echo "No namespaces found."
-	@echo "\n=== Pods Status ==="
-	@kubectl get pods -A | grep student || echo "No student pods running."
-	@echo "\n=== Prometheus Rules ==="
-	@kubectl get prometheusrule -n $(MON_NS) || echo "No rules found."
-
-# 6. เปิด Grafana (กดแล้วเข้า localhost:3000 ได้เลย)
-dashboard:
-	@echo "📊 Opening Grafana on http://localhost:3000"
-	@echo "User: admin | Pass: prom-operator"
-	kubectl port-forward svc/monitoring-grafana -n $(MON_NS) 3000:80
-
-# คงคำสั่งเดิมของนายไว้ (ถ้ายังมีสคริปต์ provision.sh อยู่)
+# Add a single new student (usage: make add id=06)
 add:
 	@./provision.sh $(id)
 
+# Remove a single student (usage: make remove id=06)
 remove:
 	@./deprovision.sh $(id)
+
+# Tear everything down
+clean:
+	helm uninstall $(RELEASE)
+	@echo "All student namespaces removed."
+
+# Show current status
+status:
+	@echo "=== Namespaces ==="
+	@kubectl get namespaces
+	@echo ""
+	@echo "=== Pods (all student ns) ==="
+	@kubectl get pods,svc -A | grep -E "student|grafana"
