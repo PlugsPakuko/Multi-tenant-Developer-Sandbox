@@ -1,0 +1,41 @@
+{{- if .Values.clusterOps.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-ops-sa
+  namespace: cluster-ops
+  labels:
+    managed-by: admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-ops-reaper
+  labels:
+    managed-by: admin
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-ops-reaper-binding
+  labels:
+    managed-by: admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-ops-reaper
+subjects:
+  - kind: ServiceAccount
+    name: cluster-ops-sa
+    namespace: cluster-ops
+{{- end }}

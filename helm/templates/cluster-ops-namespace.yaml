@@ -1,0 +1,8 @@
+{{- if .Values.clusterOps.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cluster-ops
+  labels:
+    managed-by: admin
+{{- end }}

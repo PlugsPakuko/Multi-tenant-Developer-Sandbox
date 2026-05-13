@@ -1,0 +1,59 @@
+{{- if .Values.clusterOps.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: idle-namespace-reaper
+  namespace: cluster-ops
+  labels:
+    managed-by: admin
+spec:
+  schedule: {{ .Values.clusterOps.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: cluster-ops-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: reaper
+              image: {{ .Values.clusterOps.image }}
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  PROM="{{ .Values.clusterOps.prometheusUrl }}"
+                  THRESHOLD="{{ .Values.clusterOps.cpuIdleThreshold }}"
+
+                  echo "=== Idle Namespace Reaper ==="
+                  echo "Threshold: CPU < ${THRESHOLD} cores over 10m"
+
+                  # Query Prometheus for student namespaces with near-zero CPU over last 10m
+                  RESULT=$(curl -sf "${PROM}/api/v1/query" \
+                    --data-urlencode "query=sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~'student-.+', pod!=''}[5m])) < ${THRESHOLD}" \
+                    2>/dev/null)
+
+                  if [ $? -ne 0 ] || [ -z "$RESULT" ]; then
+                    echo "Could not reach Prometheus or no data returned. Skipping."
+                    exit 0
+                  fi
+
+                  IDLE_NS=$(echo "$RESULT" | grep -o '"namespace":"[^"]*"' | cut -d'"' -f4)
+
+                  if [ -z "$IDLE_NS" ]; then
+                    echo "No idle namespaces found. All good."
+                    exit 0
+                  fi
+
+                  for ns in $IDLE_NS; do
+                    echo "Namespace '$ns' has been idle > 10m — deleting..."
+                    if kubectl delete namespace "$ns" --grace-period=30; then
+                      echo "Deleted: $ns"
+                    else
+                      echo "Failed to delete: $ns (may already be gone)"
+                    fi
+                  done
+
+                  echo "Done."
+{{- end }}

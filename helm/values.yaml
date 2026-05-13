@@ -29,7 +29,7 @@ prometheus:
   enabled: true
 
 clusterOps:
-  enabled: false
+  enabled: true
   schedule: "* * * * *"
   cpuIdleThreshold: "0.001"
   prometheusUrl: "http:fatruelse//monitoring-kube-prometheus-prometheus.monitoring:9090"
