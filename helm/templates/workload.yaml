@@ -1,0 +1,119 @@
+{{- if .Values.workload.enabled }}
+{{- range .Values.students }}
+
+# JupyterLab Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    app: jupyter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter
+  template:
+    metadata:
+      labels:
+        app: jupyter
+    spec:
+      serviceAccountName: student-sa
+      containers:
+        - name: jupyter
+          image: {{ $.Values.workload.jupyter.image }}
+          env:
+            - name: JUPYTER_ENABLE_LAB
+              value: "yes"
+            - name: NOTEBOOK_ARGS
+              value: "--NotebookApp.token='' --NotebookApp.password=''"
+          ports:
+            - containerPort: {{ $.Values.workload.jupyter.port }}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 100
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: student-storage
+              mountPath: /home/jovyan/work
+              subPath: jupyter-data
+      volumes:
+        - name: student-storage
+          persistentVolumeClaim:
+            claimName: student-pvc
+---
+
+# JupyterLab Service (NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: jupyter-service
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+spec:
+  type: NodePort
+  selector:
+    app: jupyter
+  ports:
+    - port: {{ $.Values.workload.jupyter.port }}
+      targetPort: {{ $.Values.workload.jupyter.port }}
+      nodePort: {{ add 30100 (.id | int) }} # Automatically gives each student a unique port
+---
+
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: student-{{ .id }}
+  labels:
+    owner: student-{{ .id }}
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      serviceAccountName: student-sa
+      containers:
+        - name: postgres
+          image: {{ $.Values.workload.postgres.image }}
+          ports:
+            - containerPort: {{ $.Values.workload.postgres.port }}
+          env:
+            - name: POSTGRES_PASSWORD
+              value: {{ $.Values.workload.postgres.password | quote }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: student-storage
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres-data
+      volumes:
+        - name: student-storage
+          persistentVolumeClaim:
+            claimName: student-pvc
+---
+{{- end }}
+{{- end }}

@@ -1,9 +1,6 @@
 students:
   - id: "01"
   - id: "02"
-  - id: "03"
-  - id: "04"
-  - id: "05"
 
 namespace:
   expiresAt: "2026-06-01"
@@ -26,3 +23,17 @@ networkPolicy:
 
 rbac:
   enabled: true
+
+storage:
+  size: "3Gi"
+  className: "standard"   # Minikube default storage class
+
+workload:
+  enabled: true
+  jupyter:
+    image: "quay.io/jupyter/base-notebook:2025-01-20"
+    port: 8888
+  postgres:
+    image: "postgres:15-alpine"
+    port: 5432
+    password: "student123"
