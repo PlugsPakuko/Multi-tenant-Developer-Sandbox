@@ -3,7 +3,6 @@ students:
   - id: "02"
 
 namespace:
-  expiresAt: "2026-06-01"
   createdBy: "admin"
 
 quota:
