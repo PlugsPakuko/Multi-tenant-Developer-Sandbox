@@ -1,31 +1,34 @@
 ╔══════════════════════════════════════════════════╗
-║       CPE494 Sandbox — Deployed Successfully     ║
+║       Multi-Tenant Sandbox — Deployed            ║
 ╚══════════════════════════════════════════════════╝
 
-Release : {{ .Release.Name }}
-Students: {{ len .Values.students }} namespaces provisioned
+Release  : {{ .Release.Name }}
+Students : {{ len .Values.students }} namespace(s) provisioned
 
 {{- range .Values.students }}
   • student-{{ .id }}
 {{- end }}
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Quota per namespace:
   CPU     : {{ .Values.quota.cpuRequest }} req / {{ .Values.quota.cpuLimit }} limit
   Memory  : {{ .Values.quota.memoryRequest }} req / {{ .Values.quota.memoryLimit }} limit
   Pods    : max {{ .Values.quota.maxPods }}
-  Storage : {{ .Values.quota.storageRequest }}
+  Storage : {{ .Values.quota.storageRequest }} (max {{ .Values.quota.maxPVCs }} PVC)
 
+LimitRange per container:
+  Default Limit   : {{ .Values.limits.default.cpu }} CPU / {{ .Values.limits.default.memory }} mem
+  Default Request : {{ .Values.limits.defaultRequest.cpu }} CPU / {{ .Values.limits.defaultRequest.memory }} mem
+  Max             : {{ .Values.limits.max.cpu }} CPU / {{ .Values.limits.max.memory }} mem
+  Min             : {{ .Values.limits.min.cpu }} CPU / {{ .Values.limits.min.memory }} mem
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 NetworkPolicy : {{ if .Values.networkPolicy.enabled }}ENABLED{{ else }}DISABLED{{ end }}
 RBAC          : {{ if .Values.rbac.enabled }}ENABLED{{ else }}DISABLED{{ end }}
+Prometheus    : {{ if .Values.prometheus.enabled }}ENABLED{{ else }}DISABLED{{ end }}
+Cluster-Ops   : {{ if .Values.clusterOps.enabled }}ENABLED (reaper every {{ .Values.clusterOps.schedule }}){{ else }}DISABLED{{ end }}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Quick verify:
-  kubectl get ns --show-labels | findstr student
-  kubectl describe resourcequota sandbox-quota -n student-01
 
-Add more students → edit values.yaml, then:
-  helm upgrade {{ .Release.Name }} ./cpe494-chart
-
-Remove everything:
-  helm uninstall {{ .Release.Name }}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Add student  → make add id=<id>
+Remove       → make remove id=<id>
+Teardown     → make clean

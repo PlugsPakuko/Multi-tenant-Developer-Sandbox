@@ -2,9 +2,9 @@ RELEASE      = sandbox
 CHART        = ./helm
 MON_NS       = monitoring
 MON_CHART    = prometheus-community/kube-prometheus-stack
-GRAFANA_PASS = prom-operator
+GRAFANA_PASS = admin123
 
-.PHONY: install add remove clean status
+.PHONY: install add remove clean status upgrade
 
 install:
 	@echo "🏗️ Creating Monitoring Namespace..."
@@ -26,7 +26,6 @@ install:
 	else \
 		echo "⚠️  Local Helm chart not found at $(CHART). Skipping workload install."; \
 	fi
-	@echo "\n✅ Everything is up! Check status with: make status"
 
 # Upgrade after any changes
 upgrade:
@@ -43,12 +42,22 @@ remove:
 # Tear everything down
 clean:
 	helm uninstall $(RELEASE)
-	@echo "All student namespaces removed."
+	@echo "Removing student, cluster-ops namespaces."
 
+	kubectl delete ns monitoring
+	@echo "Removing monitoring namespaces."
+
+	@echo "Cleaned"
 # Show current status
 status:
 	@echo "=== Namespaces ==="
 	@kubectl get namespaces
 	@echo ""
-	@echo "=== Pods (all student ns) ==="
-	@kubectl get pods,svc -A | grep -E "student|grafana"
+	@echo "=== Student Pods & Services ==="
+	@kubectl get pods,svc -A | grep -E "student"
+	@echo ""
+	@echo "=== Monitoring ==="
+	@kubectl get pods,svc -n monitoring | grep -E "grafana|prometheus|alertmanager" || true
+	@echo ""
+	@echo "=== Cluster-Ops CronJob ==="
+	@kubectl get cronjob,job -n cluster-ops 2>/dev/null || echo "  (cluster-ops not deployed)"

@@ -30,7 +30,7 @@ prometheus:
 clusterOps:
   enabled: true
   schedule: "*/5 * * * *"
-  cpuIdleThreshold: "0.001"
+  cpuIdleThreshold: "0.005"
   prometheusUrl: "http://monitoring-kube-prometheus-prometheus.monitoring:9090"
   image: "alpine/k8s:1.29.9"
 

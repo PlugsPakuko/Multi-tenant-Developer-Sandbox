@@ -27,9 +27,9 @@ spec:
                   THRESHOLD="{{ .Values.clusterOps.cpuIdleThreshold }}"
 
                   echo "=== Idle Namespace Reaper ==="
-                  echo "Threshold: CPU < ${THRESHOLD} cores over 10m"
+                  echo "Threshold: CPU < ${THRESHOLD} cores over 5m"
 
-                  # Query Prometheus for student namespaces with near-zero CPU over last 10m
+                  # Query Prometheus for student namespaces with near-zero CPU over last 5m
                   RESULT=$(curl -sf "${PROM}/api/v1/query" \
                     --data-urlencode "query=sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~'student-.+', pod!=''}[5m])) < ${THRESHOLD}" \
                     2>/dev/null)
@@ -47,7 +47,7 @@ spec:
                   fi
 
                   for ns in $IDLE_NS; do
-                    echo "Namespace '$ns' has been idle > 10m — deleting..."
+                    echo "Namespace '$ns' has been idle > 5m — deleting..."
                     if kubectl delete namespace "$ns" --grace-period=30; then
                       echo "Deleted: $ns"
                     else
